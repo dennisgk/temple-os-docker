@@ -31,3 +31,4 @@ Some videos online show like this: [TempleOS in Qemu](https://www.youtube.com/wa
   - This may be an issue with my image
 - Obviously, temple os heavily relies on the escape key
   - As of right now, I do not know if there is any way to tell the browser to avoid using escape as the key to message it to leave pointer lock
+- Sometimes sounds lag or are distorted (not entirely sure what could cause this)
