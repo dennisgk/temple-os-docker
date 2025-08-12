@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Streaming Audio Debug</title>
+  <style>
+    #status {
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      opacity: 0.1;
+      transition: opacity 0.2s;
+    }
+    #vu {
+      width: 200px;
+      height: 20px;
+      background: #ccc;
+      margin-top: 10px;
+      position: relative;
+    }
+    #vu-inner {
+      height: 100%;
+      background: green;
+      width: 0%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Live PC Speaker Stream</h1>
+  <button onclick="startStreaming()">Start Streaming</button>
+  <div id="status"></div>
+  <div id="vu"><div id="vu-inner"></div></div>
+
+  <script>
+    let audioCtx;
+    let workletNode;
+    let port;
+    let analyser;
+    const CHUNK_FLASH_DURATION = 150;
+
+    function blink() {
+      const el = document.getElementById('status');
+      el.style.opacity = 1;
+      setTimeout(() => el.style.opacity = 0.1, CHUNK_FLASH_DURATION);
+    }
+
+    function startVU() {
+      const vu = document.getElementById('vu-inner');
+      const buffer = new Uint8Array(analyser.fftSize);
+      function loop() {
+        analyser.getByteTimeDomainData(buffer);
+        const avg = buffer.reduce((a, b) => a + b, 0) / buffer.length;
+        const normalized = Math.abs(avg - 128) / 128;
+        vu.style.width = Math.min(1, normalized * 2) * 100 + '%';
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    async function startStreaming() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 32000 });
+
+      await audioCtx.audioWorklet.addModule('worklet-processor.js');
+
+      workletNode = new AudioWorkletNode(audioCtx, 'pcm-stream-processor');
+      workletNode.connect(audioCtx.destination);
+
+      // Visualize with analyser
+      analyser = audioCtx.createAnalyser();
+      workletNode.connect(analyser);
+      analyser.fftSize = 256;
+      analyser.connect(audioCtx.destination);
+      startVU();
+
+      port = workletNode.port;
+      port.onmessage = (event) => {
+        if (event.data.type === 'chunk') {
+          console.log(`🔊 Received audio chunk: ${event.data.size} samples`);
+          blink();
+        }
+      };
+
+      const response = await fetch('/stream.wav');
+      const reader = response.body.getReader();
+
+      let headerSkipped = false;
+      let leftover = new Uint8Array(0);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done || !value || value.length === 0) continue;
+
+        const combined = new Uint8Array(leftover.length + value.length);
+        combined.set(leftover);
+        combined.set(value, leftover.length);
+        let buffer = combined;
+
+        if (!headerSkipped) {
+          if (buffer.length < 44) {
+            leftover = buffer;
+            continue;
+          }
+          buffer = buffer.slice(44);
+          headerSkipped = true;
+        }
+
+        if (buffer.length === 0) {
+          leftover = new Uint8Array(0);
+          continue;
+        }
+
+        const pcmFloat32 = new Float32Array(buffer.length);
+        for (let i = 0; i < buffer.length; i++) {
+          pcmFloat32[i] = (buffer[i] - 128) / 128;
+        }
+
+        port.postMessage(pcmFloat32);
+        leftover = new Uint8Array(0);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+services:
+  templeos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    cpus: 4
+    container_name: templeos
+    privileged: true
+    security_opt:
+      - apparmor:unconfined  # Prevents apparmor from blocking overlay/qemu
+    environment:
+      - KASM_PORT=6901
+    ports:
+      - "21014:9000"
+    restart: unless-stopped
+    volumes:
+      - D:/templeos/temple.img:/workspace/disk.img
