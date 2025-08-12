@@ -15,3 +15,10 @@ services:
     restart: unless-stopped
     volumes:
       - D:/templeos/temple.img:/workspace/disk.img
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
