@@ -136,7 +136,7 @@ RUN chmod +x /defaults/startwm.sh
 RUN apk add --no-cache nginx
 COPY nginx.conf /workspace/nginx.conf
 
-RUN usermod -aG kvm abc
+RUN chmod 777 /dev/kvm
 
 EXPOSE 9000
 CMD ["nginx", "-c", "/workspace/nginx.conf", "-g", "daemon off;"]
