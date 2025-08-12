@@ -136,6 +136,7 @@ RUN chmod +x /defaults/startwm.sh
 RUN apk add --no-cache nginx
 COPY nginx.conf /workspace/nginx.conf
 
+RUN touch /dev/kvm
 RUN chmod 777 /dev/kvm
 
 EXPOSE 9000
