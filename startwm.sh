@@ -19,6 +19,7 @@ python3 -u /config/pcspk_audio/pcspk_stream_server.py >> /config/pcspk_audio/str
 sleep 5
 
 exec qemu-system-x86_64 \
+  -enable-kvm \
   -hda /workspace/disk.img \
   -m 1024M \
   -vga std \
