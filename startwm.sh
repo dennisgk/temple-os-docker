@@ -18,6 +18,16 @@ python3 -u /config/pcspk_audio/pcspk_stream_server.py >> /config/pcspk_audio/str
 
 sleep 5
 
+# make sure kvm is mapped in
+if [ -e /dev/kvm ]; then
+    sudo chmod 777 /dev/kvm
+    echo "Set /dev/kvm permissions to 777"
+else
+    echo "/dev/kvm not found"
+fi
+
+sleep 5
+
 exec qemu-system-x86_64 \
   -enable-kvm \
   -hda /workspace/disk.img \
