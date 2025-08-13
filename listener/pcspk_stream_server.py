@@ -2,6 +2,7 @@ import asyncio
 import os
 import sys
 from aiohttp import web
+from pathlib import Path
 
 DEFAULT_PIPE = "/config/pcspk_audio/pcspk_out.raw"
 SAMPLE_RATE = 32000
@@ -142,6 +143,7 @@ async def main(pipe_path):
 
     app = web.Application()
     app.router.add_get("/stream.wav", streamer.stream_wav)
+    app.router.add_static('/', path=Path(__file__).parent / 'static')
 
     runner = web.AppRunner(app)
     await runner.setup()
